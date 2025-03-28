@@ -34,9 +34,11 @@ def gradient_descent(f, start, alpha, max_iter=1000, tol=1e-5):
 
     for _ in range(max_iter):
         grad_val = anp.array(f_grad(x))
+        print("for x1 = " + (str)(x[0]) + "and x2 = " + (str)(x[1]) + " Grad value: " + (str)(grad_val)+ "\n")
         function_values.append(f(x[0], x[1]))
 
         if anp.linalg.norm(grad_val) < tol:
+            print("Gradient norm is less than tolerance. Stopping.")
             break
 
         x = x - alpha * grad_val
@@ -111,6 +113,7 @@ if __name__ == "__main__":
 
     start_points = [(-8, 9), (5, -3), (-2, -6)]
     alphas = [0.0001, 0.01, 0.1, 0.5, 1.0]
+    alphas2 = [2.0]
 
-    for alpha in alphas:
+    for alpha in alphas2:
         visualize_multiple_trajectories(matyas_function, start_points, alpha)

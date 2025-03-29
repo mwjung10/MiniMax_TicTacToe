@@ -121,7 +121,7 @@ def genetic_algorithm(population_size=100, generations=500, mutation_rate=0.1):
         else:
             still_generations += 1
 
-        if still_generations >= 50:
+        if still_generations >= 10:
             break
 
     return best_route, total_distance(best_route)
@@ -135,13 +135,12 @@ def plot_population_size(population_sizes, generations):
             _, best_distance = genetic_algorithm(population_size, generations)
             distances.append(best_distance)
         distances_average.append(np.mean(distances))
-        print(f"Rozmiar populacji: {population_size}, Średnia odległość: {np.mean(distances)}")
         distances.clear()
 
     plt.plot(population_sizes, distances_average, marker='o')
-    plt.xlabel("Rozmiar populacji")
-    plt.ylabel("Średnia odległość")
-    plt.title("Średnia odległość w zależności od rozmiaru populacji")
+    plt.xlabel("Population size")
+    plt.ylabel("Average distance")
+    plt.title("Average distance vs Population size")
     plt.show()
 
 
@@ -153,17 +152,34 @@ def plot_generations(population_size, generations):
             _, best_distance = genetic_algorithm(population_size, generation)
             distances.append(best_distance)
         distances_average.append(np.mean(distances))
-        print(f"Rozmiar generacji: {generation}, Średnia odległość: {np.mean(distances)}")
         distances.clear()
 
     plt.plot(generations, distances_average, marker='o')
-    plt.xlabel("Rozmiar populacji")
-    plt.ylabel("Średnia odległość")
-    plt.title("Średnia odległość w zależności od liczby pokoleń")
+    plt.xlabel("Population size")
+    plt.ylabel("Average distance")
+    plt.title("Average distance vs Generations")
     plt.show()
 
+
+def visualize_route(route):
+    x = [cities[city][0] for city in route] + [cities[route[0]][0]]
+    y = [cities[city][1] for city in route] + [cities[route[0]][1]]
+
+    plt.plot(x, y, marker='o')
+    for i, city in enumerate(route):
+        plt.text(x[i], y[i], f" {city}", fontsize=12, ha='right')
+
+    plt.title("Route Visualization")
+    plt.xlabel("X Coordinates")
+    plt.ylabel("Y Coordinates")
+    plt.show()
 
 if __name__ == "__main__":
     distance_matrix = create_distance_matrix()
     # plot_population_size([10, 50, 100, 200, 500, 1000], 10)
-    plot_generations(100, [10, 50, 100, 200, 500, 1000])
+    # plot_generations(100, [10, 50, 100, 200, 500, 1000])
+
+    best_route, best_distance = genetic_algorithm(500, 50, 0.1)
+    print("Best route:", best_route)
+    print("Best distance:", best_distance)
+    visualize_route(best_route)

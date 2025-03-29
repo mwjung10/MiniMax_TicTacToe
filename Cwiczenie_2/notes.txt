@@ -1,0 +1,11 @@
+Rozmiar populacji: 10, Średnia odległość: 42.05750305860565
+Rozmiar populacji: 50, Średnia odległość: 36.225559252952316
+Rozmiar populacji: 100, Średnia odległość: 36.58107989009015
+Rozmiar populacji: 200, Średnia odległość: 34.46070920192388
+Rozmiar populacji: 500, Średnia odległość: 33.83532679057607
+Rozmiar populacji: 1000, Średnia odległość: 33.30561146474584
+
+
+
+
+

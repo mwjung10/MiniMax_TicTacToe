@@ -3,7 +3,6 @@
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-import time
 
 
 cities = {
@@ -27,7 +26,8 @@ def create_distance_matrix():
         distance_matrix[city1] = {}
         for city2 in cities:
             if city1 != city2:
-                distance_matrix[city1][city2] = calculate_distance(city1, city2)
+                distance_matrix[city1][city2] = calculate_distance(city1,
+                                                                   city2)
     return distance_matrix
 
 
@@ -66,9 +66,16 @@ def roulette_wheel_selection(population):
 
     # Normalize the probabilities
     total = sum(scaled_fitness)
-    probabilities = [f / total for f in scaled_fitness] if total > 0 else [1 / len(population)] * len(population)
+    probabilities = ([f / total for f in scaled_fitness] if total > 0
+                     else [1 / len(population)] * len(population))
 
     return population[np.random.choice(len(population), p=probabilities)]
+
+
+def tournament_selection(population, tournament_size=100):
+    tournament = random.sample(population, tournament_size)
+    best_route = min(tournament, key=total_distance)
+    return best_route
 
 
 def single_point_crossover(parent1, parent2):
@@ -87,7 +94,8 @@ def mutate(route, mutation_rate=0.1):
     return route
 
 
-def genetic_algorithm(population_size=100, generations=500, mutation_rate=0.1):
+def genetic_algorithm(population_size=100, generations=500, mutation_rate=0.1,
+                      selectionFunction=roulette_wheel_selection):
     population = initialize_population(population_size)
     best_route = None
     still_generations = 0
@@ -96,12 +104,12 @@ def genetic_algorithm(population_size=100, generations=500, mutation_rate=0.1):
         new_population = []
 
         for _ in range(population_size):
-            parent1 = roulette_wheel_selection(population)
-            parent2 = roulette_wheel_selection(population)
+            parent1 = selectionFunction(population)
+            parent2 = selectionFunction(population)
 
             the_same_count = 0
             while parent1 == parent2:
-                parent2 = roulette_wheel_selection(population)
+                parent2 = selectionFunction(population)
                 the_same_count += 1
                 if the_same_count > 10:
                     parent2 = random.choice(population)
@@ -138,6 +146,9 @@ def plot_population_size(population_sizes, generations):
         distances.clear()
 
     plt.plot(population_sizes, distances_average, marker='o')
+    for i, distance in enumerate(distances_average):
+        plt.text(population_sizes[i], distance, f"{distance:.2f}", fontsize=9,
+                 ha='right')
     plt.xlabel("Population size")
     plt.ylabel("Average distance")
     plt.title("Average distance vs Population size")
@@ -155,7 +166,10 @@ def plot_generations(population_size, generations):
         distances.clear()
 
     plt.plot(generations, distances_average, marker='o')
-    plt.xlabel("Population size")
+    for i, distance in enumerate(distances_average):
+        plt.text(generations[i], distance, f"{distance:.2f}", fontsize=9,
+                 ha='right')
+    plt.xlabel("Generation size")
     plt.ylabel("Average distance")
     plt.title("Average distance vs Generations")
     plt.show()
@@ -174,6 +188,74 @@ def visualize_route(route):
     plt.ylabel("Y Coordinates")
     plt.show()
 
+
+def test_mutation_rates(best_population, best_generations, mutation_rates):
+    # we check every 20% of generations
+    generations_list = list(range(1, best_generations + 1,
+                                  best_generations // 5))
+    results = {rate: [] for rate in mutation_rates}
+
+    for mutation_rate in mutation_rates:
+        for generations in generations_list:
+            distances = []
+            for _ in range(5):
+                _, best_distance = genetic_algorithm(best_population,
+                                                     generations,
+                                                     mutation_rate)
+                distances.append(best_distance)
+
+            avg_distance = np.mean(distances)
+            results[mutation_rate].append((generations, avg_distance))
+            print(f"Mutation rate: {mutation_rate}, Generations: {generations}\
+                  => Average distance: {avg_distance}")
+
+    return results
+
+
+def plot_mutation_results(mutation_results):
+    for rate, data in mutation_results.items():
+        generations, distances = zip(*data)
+        plt.plot(generations, distances, marker='o', label=f"Mutacja: {rate}")
+
+    plt.xlabel("Generations")
+    plt.ylabel("Average distance")
+    plt.title("Average distance vs Generations for different mutation rates")
+    plt.legend()
+    plt.show()
+
+
+def compare_selection_methods(population_size, generations):
+    methods = {
+        "Roulette Wheel": roulette_wheel_selection,
+        "Tournament": tournament_selection
+    }
+    results = {}
+
+    for method_name, method in methods.items():
+        distances = []
+        for _ in range(10):
+            _, best_distance = genetic_algorithm(population_size, generations,
+                                                 selectionFunction=method)
+            distances.append(best_distance)
+        results[method_name] = np.mean(distances)
+
+    return results
+
+
+def plot_selection_methods(results):
+    methods = list(results.keys())
+    distances = list(results.values())
+
+    plt.bar(methods, distances, color=['blue', 'orange'])
+    plt.text(methods[0], distances[0], f"{distances[0]:.2f}",   fontsize=12,
+             ha='center', va='bottom')
+    plt.text(methods[1], distances[1], f"{distances[1]:.2f}", fontsize=12,
+             ha='center', va='bottom')
+    plt.ylabel("Average distance")
+    plt.title("Average distance for different selection methods for population size 100")
+    plt.show()
+
+
 if __name__ == "__main__":
     distance_matrix = create_distance_matrix()
     # plot_population_size([10, 50, 100, 200, 500, 1000], 10)
@@ -183,3 +265,11 @@ if __name__ == "__main__":
     print("Best route:", best_route)
     print("Best distance:", best_distance)
     visualize_route(best_route)
+
+    # plot_mutation_results(
+    #     test_mutation_rates(500, 50, [0.05, 0.1, 0.2, 0.5, 1.0])
+    # )
+
+    # plot_selection_methods(
+    #     compare_selection_methods(100, 50)
+    # )

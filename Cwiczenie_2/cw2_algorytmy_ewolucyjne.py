@@ -1,6 +1,10 @@
-#Cel zadania polega na implementacji algorytmu genetycznego z mutacją, selekcją ruletkową, krzyżowaniem jednopunktowym oraz sukcesją generacyjną.
+# Cel zadania polega na implementacji algorytmu genetycznego z mutacją,
+# selekcją ruletkową, krzyżowaniem jednopunktowym oraz sukcesją generacyjną.
 import random
 import numpy as np
+import matplotlib.pyplot as plt
+import time
+
 
 cities = {
     "A": (0, 0), "B": (1, 3), "C": (2, 1), "D": (4, 6), "E": (5, 2),
@@ -8,6 +12,7 @@ cities = {
 }
 
 num_cities = len(cities)
+distance_matrix = {}
 
 
 def calculate_distance(city1, city2):
@@ -16,18 +21,29 @@ def calculate_distance(city1, city2):
     return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
 
 
+def create_distance_matrix():
+    distance_matrix = {}
+    for city1 in cities:
+        distance_matrix[city1] = {}
+        for city2 in cities:
+            if city1 != city2:
+                distance_matrix[city1][city2] = calculate_distance(city1, city2)
+    return distance_matrix
+
+
 def total_distance(route):
     total = 0
     for i in range(len(route) - 1):
-        total += calculate_distance(route[i], route[i + 1])
-    return total + calculate_distance(route[-1], route[0])
+        total += distance_matrix[route[i]][route[i + 1]]
+    total += distance_matrix[route[-1]][route[0]]
+    return total
 
 
 def fitness(route):
     return 1 / total_distance(route)
 
 
-def initalize_population(size):
+def initialize_population(size):
     population = []
     cities_list = list(cities.keys())
     for _ in range(size):
@@ -38,18 +54,21 @@ def initalize_population(size):
 
 
 def roulette_wheel_selection(population):
-    fitness_values = [total_distance(route) for route in population]
+    fitness_values = [fitness(route) for route in population]
     min_fitness = min(fitness_values)
     max_fitness = max(fitness_values)
-    scaled_fitness = [(f - min_fitness) / (max_fitness - min_fitness) for f in fitness_values]
-    probablities = [f / sum(scaled_fitness) for f in scaled_fitness]
+
+    if max_fitness == min_fitness:
+        return random.choice(population)
+
+    scaled_fitness = [(f - min_fitness) / (max_fitness - min_fitness)
+                      for f in fitness_values]
 
     # Normalize the probabilities
-    total = sum(probablities)
-    probablities = [p / total for p in probablities]
+    total = sum(scaled_fitness)
+    probabilities = [f / total for f in scaled_fitness] if total > 0 else [1 / len(population)] * len(population)
 
-    select_index = np.random.choice(len(population), p=probablities)
-    return population[select_index]
+    return population[np.random.choice(len(population), p=probabilities)]
 
 
 def single_point_crossover(parent1, parent2):
@@ -62,30 +81,31 @@ def single_point_crossover(parent1, parent2):
 
 
 def mutate(route, mutation_rate=0.1):
-    for i in range(len(route)):
-        if random.random() < mutation_rate:
-            swap_index = random.randint(0, len(route) - 1)
-            route[i], route[swap_index] = route[swap_index], route[i]
+    if random.random() < mutation_rate:
+        i, j = random.sample(range(len(route)), 2)
+        route[i], route[j] = route[j], route[i]
     return route
 
 
-def genetic_algorithm(population_size=100, generations=500, mutation_rate=0.1, elitism=True):
-    population = initalize_population(population_size)
+def genetic_algorithm(population_size=100, generations=500, mutation_rate=0.1):
+    population = initialize_population(population_size)
     best_route = None
+    still_generations = 0
 
     for _ in range(generations):
         new_population = []
 
-        if elitism:
-            best_route = min(population, key=lambda r: total_distance(r))
-            new_population.append(best_route)
-
-        while len(new_population) < population_size:
+        for _ in range(population_size):
             parent1 = roulette_wheel_selection(population)
             parent2 = roulette_wheel_selection(population)
 
+            the_same_count = 0
             while parent1 == parent2:
                 parent2 = roulette_wheel_selection(population)
+                the_same_count += 1
+                if the_same_count > 10:
+                    parent2 = random.choice(population)
+                    break
 
             child = single_point_crossover(parent1, parent2)
             child = mutate(child, mutation_rate)
@@ -93,13 +113,57 @@ def genetic_algorithm(population_size=100, generations=500, mutation_rate=0.1, e
 
         population = new_population
 
-        current_best = min(population, key=lambda r: total_distance(r))
-        if best_route is None or total_distance(current_best) < total_distance(best_route):
+        current_best = min(population, key=total_distance)
+        if (best_route is None or
+           total_distance(current_best) < total_distance(best_route)):
             best_route = current_best
+            still_generations = 0
+        else:
+            still_generations += 1
+
+        if still_generations >= 50:
+            break
 
     return best_route, total_distance(best_route)
 
 
-best_route, best_distance = genetic_algorithm(population_size=100, generations=500, mutation_rate=0.1, elitism=True)
-print("Best route:", best_route)
-print("Best distance:", best_distance)
+def plot_population_size(population_sizes, generations):
+    distances = []
+    distances_average = []
+    for population_size in population_sizes:
+        for _ in range(10):
+            _, best_distance = genetic_algorithm(population_size, generations)
+            distances.append(best_distance)
+        distances_average.append(np.mean(distances))
+        print(f"Rozmiar populacji: {population_size}, Średnia odległość: {np.mean(distances)}")
+        distances.clear()
+
+    plt.plot(population_sizes, distances_average, marker='o')
+    plt.xlabel("Rozmiar populacji")
+    plt.ylabel("Średnia odległość")
+    plt.title("Średnia odległość w zależności od rozmiaru populacji")
+    plt.show()
+
+
+def plot_generations(population_size, generations):
+    distances = []
+    distances_average = []
+    for generation in generations:
+        for _ in range(10):
+            _, best_distance = genetic_algorithm(population_size, generation)
+            distances.append(best_distance)
+        distances_average.append(np.mean(distances))
+        print(f"Rozmiar generacji: {generation}, Średnia odległość: {np.mean(distances)}")
+        distances.clear()
+
+    plt.plot(generations, distances_average, marker='o')
+    plt.xlabel("Rozmiar populacji")
+    plt.ylabel("Średnia odległość")
+    plt.title("Średnia odległość w zależności od liczby pokoleń")
+    plt.show()
+
+
+if __name__ == "__main__":
+    distance_matrix = create_distance_matrix()
+    # plot_population_size([10, 50, 100, 200, 500, 1000], 10)
+    plot_generations(100, [10, 50, 100, 200, 500, 1000])

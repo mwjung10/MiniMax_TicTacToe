@@ -94,4 +94,5 @@ class Board:
         self.playing_now_idx += 1
         if self.playing_now_idx >= len(self.player_chars):
             self.playing_now_idx = 0
+
         return self.player_chars[self.playing_now_idx]

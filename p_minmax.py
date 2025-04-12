@@ -1,6 +1,5 @@
 """
 Author: Katarzyna Nałęcz-Charkiewicz
-Functonality author: Monika Jung
 """
 
 from board import Board
@@ -19,9 +18,9 @@ class MinMaxPlayer(Player):
         for move in board.empty_indexes():
             new_board = board.clone()
             new_board.register_move(move)
-            move_value = self.minimax(new_board, your_side, your_side, self.depth_limit)
+            move_value = self.minimax(new_board, your_side, False, self.depth_limit - 1)
 
-            if move_value > best_value:
+            if move_value > best_value or best_move is None:
                 best_value = move_value
                 best_move = move
 
@@ -30,35 +29,42 @@ class MinMaxPlayer(Player):
     def _opponent(self, side: str) -> str:
         return 'x' if side == 'o' else 'o'
 
-    def minimax(self, board: Board, side: str, ai_side: str, depth=10, alpha=float('-inf'), beta=float('inf')):
-        if board.who_is_winner() or not board.empty_indexes() or depth == 0:
-            return self.evaluate(board, side)
+    def minimax(self, board: Board, ai_side: str, is_maximizing: bool, depth: int, alpha= float('-inf'), beta= float('inf')):
+        # Sprawdzamy warunki terminalne
+        winner = board.who_is_winner()
+        if winner is not None or depth == 0 or not board.empty_indexes():
+            return self.evaluate(board, ai_side)
 
-        moves = board.empty_indexes()
-
-        if side == ai_side:  # AI's turn — maximize
-            for move in moves:
+        if is_maximizing:
+            max_eval = float('-inf')
+            for move in board.empty_indexes():
                 new_board = board.clone()
                 new_board.register_move(move)
-                alpha = max(alpha, self.minimax(new_board, ai_side, self._opponent(side), depth - 1, alpha, beta))
+                eval = self.minimax(new_board, ai_side, False, depth - 1, alpha, beta)
+                max_eval = max(max_eval, eval)
+                alpha = max(alpha, eval)
                 if beta <= alpha:
                     return beta
-            return alpha
-        else:  # Opponent's turn — minimize
-            for move in moves:
+            return max_eval
+        else:
+            min_eval = float('inf')
+            for move in board.empty_indexes():
                 new_board = board.clone()
                 new_board.register_move(move)
-                beta = min(beta, self.minimax(new_board, ai_side, self._opponent(side), depth - 1, alpha, beta))
+                eval = self.minimax(new_board, ai_side, True, depth - 1, alpha, beta)
+                min_eval = min(min_eval, eval)
+                beta = min(beta, eval)
                 if beta <= alpha:
                     return alpha
-            return beta
+            return min_eval
 
-    def evaluate(self, board: Board, side: str):
+    def evaluate(self, board: Board, ai_side: str) -> float:
         winner = board.who_is_winner()
-        if winner == side:
+
+        if winner == ai_side:
             return 1
-        elif winner == self._opponent(side):
+        elif winner == self._opponent(ai_side):
             return -1
-        else:
-            return 0
+
+        return 0
 

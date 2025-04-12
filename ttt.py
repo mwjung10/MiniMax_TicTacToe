@@ -94,7 +94,7 @@ def build_player(player_type: str, player_name: str, depth_limit):
 
 
 if __name__ == "__main__":
-    board_size = 3
+    board_size = 5
     logging.getLogger().setLevel(logging.INFO)
     print(sys.argv)
     player1_type = sys.argv[1] if len(sys.argv) > 1 else "random"

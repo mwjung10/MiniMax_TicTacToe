@@ -94,14 +94,16 @@ def build_player(player_type: str, player_name: str, depth_limit):
 
 
 if __name__ == "__main__":
-    board_size = 5
+    board_size = 3
     logging.getLogger().setLevel(logging.INFO)
     print(sys.argv)
     player1_type = sys.argv[1] if len(sys.argv) > 1 else "random"
     player2_type = sys.argv[2] if len(sys.argv) > 2 else "random"
-    depth_limit = 9 if board_size == 3 else 6
-    player1 = build_player(player1_type, "o", depth_limit)
-    player2 = build_player(player2_type, "x", depth_limit)
+    depth_limit = []
+    depth_limit[0] = sys.argv[3] if len(sys.argv) > 3 else 9
+    depth_limit[1] = sys.argv[4] if len(sys.argv) > 4 else 9
+    player1 = build_player(player1_type, "o", depth_limit[0])
+    player2 = build_player(player2_type, "x", depth_limit[1])
     game = Game(board_size, player1, player2)
     player1.bind_console(game.console)
     player2.bind_console(game.console)

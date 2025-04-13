@@ -6,9 +6,11 @@ Date: March 25, 2023
 
 Tic-Tac-Toe Implementation
 
-This program provides a simple implementation of the classic game Tic-Tac-Toe with a text-based user interface.
+This program provides a simple implementation of the classic game Tic-Tac-Toe
+with a text-based user interface.
 
-The program is provided for the purpose of completing assignment 3 in the subject of WSI.
+The program is provided for the purpose of completing assignment 3 in the
+subject of WSI.
 
 """
 
@@ -25,7 +27,8 @@ from console import Console
 
 
 class Game:
-    def __init__(self, board_size: int, player1: player.Player, player2: player.Player):
+    def __init__(self, board_size: int, player1: player.Player,
+                 player2: player.Player):
         self.board = board.Board(board_size)
         self.players = [player1, player2]
         self.show_board = True
@@ -100,8 +103,8 @@ if __name__ == "__main__":
     player1_type = sys.argv[1] if len(sys.argv) > 1 else "random"
     player2_type = sys.argv[2] if len(sys.argv) > 2 else "random"
     depth_limit = []
-    depth_limit[0] = sys.argv[3] if len(sys.argv) > 3 else 9
-    depth_limit[1] = sys.argv[4] if len(sys.argv) > 4 else 9
+    depth_limit.append(int(sys.argv[3]) if len(sys.argv) > 3 else 9)
+    depth_limit.append(int(sys.argv[4]) if len(sys.argv) > 4 else 9)
     player1 = build_player(player1_type, "o", depth_limit[0])
     player2 = build_player(player2_type, "x", depth_limit[1])
     game = Game(board_size, player1, player2)
